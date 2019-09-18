@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -34,10 +36,7 @@ namespace ResourceApi.Controllers
 
             using (var client = _clientFactory.CreateClient())
             {
-                //client.DefaultRequestHeaders.Accept.Clear();
-                //client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/x-www-form-urlencoded");
-                //var response = client.PostAsync("http://178.33.123.109:8080/auth/realms/dev", new FormUrlEncodedContent(null));
                 var tokenResponse = await client.RequestPasswordTokenAsync(new PasswordTokenRequest
                 {
                     Address = "http://178.33.123.109:8080/auth/realms/dev/protocol/openid-connect/token",
@@ -46,9 +45,6 @@ namespace ResourceApi.Controllers
                     UserName = model.Email,
                     Password = model.Pasword
                 });
-                // return tokenResponse.AccessToken;
-                //token op kelas usr/psw yozib keyloack apidan!
-                // return Ok("{token}");
                 return Ok(tokenResponse.AccessToken);
             }
         }
@@ -60,19 +56,10 @@ namespace ResourceApi.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> Info()
         {
-            //bizaga kkmas bu,qolgan reallni info kk 4ta columns.
-            //Keycloak api bor bor remote ulanas ,Keycloak API ga,ozimiz api ortada ortakas bolad.
+            var tokenValue = HttpContext.Request.Headers.SingleOrDefault(s => s.Key == "Authorization");
             using (var client = _clientFactory.CreateClient())
             {
-                var tokenResponse = await client.RequestPasswordTokenAsync(new PasswordTokenRequest
-                {
-                    Address = "http://178.33.123.109:8080/auth/realms/dev/protocol/openid-connect/token",
-                    ClientId = "btc",
-                    ClientSecret = "381c1d29-2309-4529-a268-df162b0ec74c",
-                    UserName = "abror",
-                    Password = "abror"
-                });
-                client.SetBearerToken(tokenResponse.AccessToken);
+                client.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(tokenValue.Value);
                 var userInfo = await client.GetAsync("http://178.33.123.109:8080/auth/realms/dev/protocol/openid-connect/userinfo");
                 var user = await userInfo.Content.ReadAsAsync<UserModel>();
                 return Ok(user);
@@ -80,11 +67,29 @@ namespace ResourceApi.Controllers
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public IActionResult Logout()
+        public HttpResponseMessage Logout()
         {
-            //remote session qop ketsa,har doim prev sessiondag token ishlatmes,shuni un session yopib yurish kk
+            var result = new HttpResponseMessage();
+            using (var reader = new StreamReader(Request.Body))
+            {
+                var body = reader.ReadToEnd();
+                var jsonBody = JObject.Parse(body);
+                var refreshToken = jsonBody.GetValue("refresh_token").ToString();
+                using (var client = _clientFactory.CreateClient())
+                {
+                    var tokenValue = HttpContext.Request.Headers.SingleOrDefault(s => s.Key == "Authorization");
 
-            return Ok();
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/x-www-form-urlencoded");
+                    client.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse(tokenValue.Value);
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "http://178.33.123.109:8080/auth/realms/dev/protocol/openid-connect/logout");
+                    request.Content = new StringContent(refreshToken);
+                    client.SendAsync(request).ContinueWith(response =>
+                    {
+                        result = response.Result;
+                    });
+                }
+            }
+            return result;
         }
 
     }

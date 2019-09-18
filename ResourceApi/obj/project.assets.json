@@ -12132,11 +12132,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Администратор\\source\\repos\\ResourceApi\\ResourceApi\\ResourceApi.csproj",
+      "projectUniqueName": "C:\\Users\\Администратор\\Desktop\\ResourceApi\\ResourceApi\\ResourceApi.csproj",
       "projectName": "ResourceApi",
-      "projectPath": "C:\\Users\\Администратор\\source\\repos\\ResourceApi\\ResourceApi\\ResourceApi.csproj",
+      "projectPath": "C:\\Users\\Администратор\\Desktop\\ResourceApi\\ResourceApi\\ResourceApi.csproj",
       "packagesPath": "C:\\Users\\Администратор\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Администратор\\source\\repos\\ResourceApi\\ResourceApi\\obj\\",
+      "outputPath": "C:\\Users\\Администратор\\Desktop\\ResourceApi\\ResourceApi\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
