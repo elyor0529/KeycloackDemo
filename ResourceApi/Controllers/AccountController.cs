@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ResourceApi.Models;
 using ResourceApi.Services;
@@ -29,7 +30,7 @@ namespace ResourceApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login([FromBody]LoginModel model)
+        public async Task<dynamic> Login([FromBody]LoginModel model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(model);
@@ -55,9 +56,13 @@ namespace ResourceApi.Controllers
             {
                 var body = reader.ReadToEnd();
                 var jsonBody = JObject.Parse(body);
-                var refreshToken = jsonBody.GetValue("refresh_token").ToString();
+                var credsModel = new ClientCredsModel();
+                credsModel.refresh_token = jsonBody.GetValue("refresh_token").ToString();
+                credsModel.client_id = jsonBody.GetValue("client_id").ToString();
+                var convertedModel = JsonConvert.SerializeObject(credsModel);
+
                 var tokenValue = HttpContext.Request.Headers.SingleOrDefault(s => s.Key == "Authorization");
-                var returnValue = await _membershipService.Logout(tokenValue, refreshToken);
+                var returnValue = await _membershipService.Logout(tokenValue, convertedModel);
                 return returnValue;
             }
         }

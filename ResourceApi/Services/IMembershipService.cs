@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using ResourceApi.Models;
 using System;
 using System.Collections.Generic;
@@ -9,8 +10,8 @@ namespace ResourceApi.Services
 {
     public interface IMembershipService
     {
-        Task<string> GetAccessToken(LoginModel model);
+        Task<dynamic> GetAccessToken(LoginModel model);
         Task<UserModel> GetUserInfo(dynamic token);
-        Task<JsonResult> Logout(dynamic accessToken, string refreshToken);   
+        Task<JsonResult> Logout(dynamic accessToken, dynamic refreshToken);   
     }
 }
