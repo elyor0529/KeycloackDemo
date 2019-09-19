@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ResourceApi.Infrastructure;
 
 namespace ResourceApi
 {
@@ -39,6 +40,8 @@ namespace ResourceApi
                     options.Audience = Configuration["Jwt:Audience"];
                     options.RequireHttpsMetadata = false;
                 });
+
+            ModuleInitializer.ConfigureServices(services, Configuration);
 
             services.AddHttpClient();
             services.AddHttpContextAccessor();

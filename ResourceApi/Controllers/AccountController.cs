@@ -12,8 +12,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
-using ResourceApi.Membership;
 using ResourceApi.Models;
+using ResourceApi.Services;
 
 namespace ResourceApi.Controllers
 {
@@ -21,12 +21,11 @@ namespace ResourceApi.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
+        private readonly IMembershipService _membershipService;
 
-        private readonly IHttpClientFactory _clientFactory;
-
-        public AccountController(IHttpClientFactory clientFactory)
+        public AccountController(IHttpClientFactory clientFactory, IMembershipService membershipService)
         {
-            _clientFactory = clientFactory;
+            _membershipService = membershipService;
         }
 
         [HttpPost]
@@ -35,43 +34,32 @@ namespace ResourceApi.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(model);
 
-            using (var client = _clientFactory.CreateClient())
-            {
-                var result = await LoginMembership.GetAccessToken(client, model);
-                return Ok(result);
-            }
+            var result = await _membershipService.GetAccessToken(model);
+            return Ok(result);
         }
-        
 
         [HttpGet]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> Info()
         {
             var tokenValue = HttpContext.Request.Headers.SingleOrDefault(s => s.Key == "Authorization");
-            using (var client = _clientFactory.CreateClient())
-            {
-                var user = await UserInfoMembership.GetUserInfo(client, tokenValue);
-                return Ok(user);
-            };
+            var user = await _membershipService.GetUserInfo(tokenValue);
+            //var user = await UserInfoMembership.GetUserInfo(client, tokenValue);
+            return Ok(user);
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<HttpResponseMessage> Logout()
+        public async Task<JsonResult> Logout()
         {
-            var result = new HttpResponseMessage();
             using (var reader = new StreamReader(Request.Body))
             {
                 var body = reader.ReadToEnd();
                 var jsonBody = JObject.Parse(body);
                 var refreshToken = jsonBody.GetValue("refresh_token").ToString();
-                using (var client = _clientFactory.CreateClient())
-                {
-                    var tokenValue = HttpContext.Request.Headers.SingleOrDefault(s => s.Key == "Authorization");
-                    result = await LogoutMembership.Logout(client, tokenValue, refreshToken);
-                }
+                var tokenValue = HttpContext.Request.Headers.SingleOrDefault(s => s.Key == "Authorization");
+                var returnValue = await _membershipService.Logout(tokenValue, refreshToken);
+                return returnValue;
             }
-            return result;
         }
-
     }
 }
